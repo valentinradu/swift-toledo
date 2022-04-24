@@ -22,7 +22,7 @@ struct InjectablePlugin: BuildToolPlugin {
             .sourceFiles.map { $0.path }
             .compactMap {
                 let filename = $0.lastComponent
-                let outputName = $0.stem + "\(UUID())" + ".swift"
+                let outputName = $0.stem + "+Dependencies" + ".swift"
                 let outputPath = context.pluginWorkDirectory.appending(outputName)
 
                 return .buildCommand(displayName: "Processing \(filename)",

@@ -10,7 +10,7 @@ import Foundation
 import XCTest
 
 final class InjectableToolTests: XCTestCase {
-    func testBasic() async throws {
+    func testBasicDefinitionFinder() async throws {
         let example = """
             struct Test {}
             struct Test0: Dependency, AsyncFailableDependency, FailableDependency {}
@@ -20,12 +20,12 @@ final class InjectableToolTests: XCTestCase {
             extension Test4: Dependency, AsyncFailableDependency, FailableDependency {}
         """
 
-        let definitionsProvider = DefinitionsProvider()
-        try definitionsProvider.parse(source: example)
+        let definitionsFinder = DefinitionsFinder()
+        try definitionsFinder.parse(source: example)
 
-        print(definitionsProvider.definitions)
+        print(definitionsFinder.definitions)
 
-        XCTAssertEqual(definitionsProvider.definitions,
+        XCTAssertEqual(definitionsFinder.definitions,
                        [
                            DependencyDefinition(name: "Test0", identifier: .dependency),
                            DependencyDefinition(name: "Test0", identifier: .asyncFailableDependency),
@@ -47,5 +47,16 @@ final class InjectableToolTests: XCTestCase {
                            DependencyDefinition(name: "Test4", identifier: .asyncFailableDependency),
                            DependencyDefinition(name: "Test4", identifier: .failableDependency),
                        ])
+    }
+
+    func testBasicExtensionBuilder() async throws {
+        let builder = ExtensionBuilder()
+        let result = builder.buildExtensions(for: [
+            DependencyDefinition(name: "Test", identifier: .dependency),
+            DependencyDefinition(name: "Test", identifier: .asyncFailableDependency),
+            DependencyDefinition(name: "Test", identifier: .failableDependency),
+        ])
+
+        print(result)
     }
 }
