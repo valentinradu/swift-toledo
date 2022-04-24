@@ -18,6 +18,6 @@ struct A: Dependency {
 struct B: Dependency {
     let a: A
     init(with container: SharedContainer) {
-        a = A(with: container)
+        a = container.a()
     }
 }

@@ -3,7 +3,6 @@ public protocol DependencyKey {
     static var defaultValue: V { get }
 }
 
-@MainActor
 public struct SharedContainer {
     static var all: [AnyHashable: Any] = [:]
 
@@ -18,75 +17,84 @@ public struct SharedContainer {
     }
 }
 
-public actor _AsyncFailableDependencyProvider<V> {
-    public typealias ProviderFunc = (SharedContainer) async throws -> V
+public class _AsyncFailableDependencyProvider<V> where V: AsyncFailableDependency {
+    public typealias Provider = () async throws -> V
     private var _value: V?
-    private var _closure: ProviderFunc
+    private var _provider: Provider?
 
-    public init(_ closure: @escaping ProviderFunc) {
-        _closure = closure
-    }
+    public init() {}
 
     public func getValue(container: SharedContainer) async throws -> V {
         if let value = _value {
             return value
         }
-        let value = try await _closure(container)
+        let value: V
+        if let provider = _provider {
+            value = try await provider()
+        } else {
+            value = try await V(with: container)
+        }
         _value = value
         return value
     }
 
-    public func replaceProvider(_ closure: @escaping ProviderFunc) {
+    public func replaceProvider(_ provider: @escaping Provider) {
         _value = nil
-        _closure = closure
+        _provider = provider
     }
 }
 
-public class _FailableDependencyProvider<V> {
-    public typealias ProviderFunc = (SharedContainer) throws -> V
+public class _FailableDependencyProvider<V> where V: FailableDependency {
+    public typealias Provider = () throws -> V
     private var _value: V?
-    private var _closure: ProviderFunc
+    private var _provider: Provider?
 
-    public init(_ closure: @escaping ProviderFunc) {
-        _closure = closure
-    }
+    public init() {}
 
     public func getValue(container: SharedContainer) throws -> V {
         if let value = _value {
             return value
         }
-        let value = try _closure(container)
+        let value: V
+        if let provider = _provider {
+            value = try provider()
+        } else {
+            value = try V(with: container)
+        }
         _value = value
         return value
     }
 
-    public func replaceProvider(_ closure: @escaping ProviderFunc) {
+    public func replaceProvider(_ provider: @escaping Provider) {
         _value = nil
-        _closure = closure
+        _provider = provider
     }
 }
 
-public class _DependencyProvider<V> {
-    public typealias ProviderFunc = (SharedContainer) -> V
+public class _DependencyProvider<V> where V: Dependency {
+    public typealias Provider = () -> V
     private var _value: V?
-    private var _closure: ProviderFunc
+    private var _provider: Provider?
 
-    public init(_ closure: @escaping ProviderFunc) {
-        _closure = closure
-    }
+    public init() {}
 
     public func getValue(container: SharedContainer) -> V {
         if let value = _value {
             return value
         }
-        let value = _closure(container)
+        let value: V
+        if let provider = _provider {
+            value = provider()
+        } else {
+            value = V(with: container)
+        }
         _value = value
         return value
     }
 
-    public func replaceProvider(_ closure: @escaping ProviderFunc) {
+    public func replaceProvider(_ provider: @escaping Provider) {
         _value = nil
-        _closure = closure
+        _provider = provider
     }
 }
 

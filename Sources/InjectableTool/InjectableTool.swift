@@ -10,12 +10,28 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxParser
 
+enum InjectableToolError: Error {
+    case failedToReadInputFile
+}
+
 @main
 enum InjectableTool {
     public static func main() throws {
-        print("-------------------")
-        FileManager.default.createFile(atPath: CommandLine.arguments[2],
-                                       contents: nil)
+        guard let sourceData = FileManager.default
+            .contents(atPath: CommandLine.arguments[1]),
+            let source = String(data: sourceData, encoding: .utf8)
+        else {
+            throw InjectableToolError.failedToReadInputFile
+        }
+
+        let definitionsFinder = DefinitionsFinder()
+        try definitionsFinder.parse(source: source)
+
+        let extensionsBuilder = ExtensionBuilder(definitionsFinder.definitions)
+        if let extensions = try extensionsBuilder.build() {
+            FileManager.default.createFile(atPath: CommandLine.arguments[2],
+                                           contents: extensions.data(using: .utf8))
+        }
     }
 }
 
@@ -23,15 +39,39 @@ enum DependencyIdentifier: String {
     case asyncFailableDependency = "AsyncFailableDependency"
     case failableDependency = "FailableDependency"
     case dependency = "Dependency"
+
+    var signature: String {
+        switch self {
+        case .asyncFailableDependency:
+            return "async throws"
+        case .failableDependency:
+            return "throws"
+        case .dependency:
+            return ""
+        }
+    }
+
+    var prefix: String {
+        switch self {
+        case .asyncFailableDependency:
+            return "try await"
+        case .failableDependency:
+            return "try"
+        case .dependency:
+            return ""
+        }
+    }
 }
 
 struct DependencyDefinition: Equatable {
     let name: String
     let identifier: DependencyIdentifier
+    let isPublic: Bool
 }
 
 class DefinitionsFinder: SyntaxVisitor {
     private var _isScanning: Bool = false
+    private var _isPublic: Bool = false
     private var _lastName: String?
     private(set) var definitions: [DependencyDefinition] = []
 
@@ -39,25 +79,33 @@ class DefinitionsFinder: SyntaxVisitor {
         switch token.tokenKind {
         case .structKeyword, .classKeyword,
              .enumKeyword, .contextualKeyword("actor"),
-             .extensionKeyword:
+             .extensionKeyword, .protocolKeyword:
             _isScanning = true
+        case .publicKeyword:
+            if _isScanning {
+                _isPublic = true
+            }
         case let .identifier(value):
-            assert(_isScanning)
+            guard _isScanning else {
+                break
+            }
 
             if _lastName == nil {
                 _lastName = value
             }
 
             if let dependencyIdentifier = DependencyIdentifier(rawValue: value),
-               let lastName = _lastName
+               let lastName = _lastName, !definitions.map(\.name).contains(lastName)
             {
                 let definition = DependencyDefinition(name: lastName,
-                                                      identifier: dependencyIdentifier)
+                                                      identifier: dependencyIdentifier,
+                                                      isPublic: _isPublic)
                 definitions.append(definition)
             }
         case .leftBrace:
             _isScanning = false
             _lastName = nil
+            _isPublic = false
         default:
             break
         }
@@ -75,83 +123,64 @@ class DefinitionsFinder: SyntaxVisitor {
     }
 }
 
+struct RawSyntax: SyntaxBuildable, ExpressibleAsCodeBlockItem {
+    let source: String
+
+    func buildSyntax(format: Format, leadingTrivia: Trivia?) -> Syntax {
+        do {
+            let syntax = try Syntax(SyntaxParser.parse(source: source))
+            if let leadingTrivia = leadingTrivia {
+                return syntax.withLeadingTrivia(leadingTrivia)
+            } else {
+                return syntax
+            }
+        } catch {
+            return CodeBlockItemList([])
+                .buildSyntax(format: format, leadingTrivia: leadingTrivia)
+        }
+    }
+
+    func createCodeBlockItem() -> CodeBlockItem {
+        CodeBlockItem(item: self)
+    }
+}
+
+extension String {
+    func lowercasedFirstLetter() -> String {
+        return prefix(1).lowercased() + lowercased().dropFirst()
+    }
+}
+
 class ExtensionBuilder {
-    func buildExtensions(for _: [DependencyDefinition]) -> String {
+    private let _definitions: [DependencyDefinition]
+
+    init(_ definitions: [DependencyDefinition]) {
+        _definitions = definitions
+    }
+
+    func build() throws -> String? {
+        if _definitions.count == 0 {
+            return nil
+        }
+
         let source = SourceFile(eofToken: .eof) {
             ImportDecl(pathBuilder: {
                 AccessPathComponent(name: "Injectable")
             })
-            StructDecl(
-                modifiers: ModifierList([TokenSyntax.private]),
-                structKeyword: .struct,
-                identifier: .identifier("TestDependencyProviderKey"),
-                inheritanceClause: TypeInheritanceClause {
-                    InheritedType(typeName: "DependencyKey")
-                },
-                members: MemberDeclBlock {
-                    VariableDecl(
-                        modifiers: ModifierList([TokenSyntax.static]),
-                        letOrVarKeyword: .var,
-                        bindings: PatternBindingList([
-                            PatternBinding(
-                                pattern: IdentifierPattern("defaultValue"),
-                                typeAnnotation: SimpleTypeIdentifier(
-                                    name: .identifier("_DependencyProvider"),
-                                    genericArgumentClause: GenericArgumentClause(leftAngleBracket: .leftAngle.withoutTrivia(),
-                                                                                 arguments: GenericArgument(argumentType: "Test"),
-                                                                                 rightAngleBracket: .rightAngle.withoutTrivia())
-
-                                ),
-                                initializer: InitializerClause(
-                                    value: FunctionCallExpr(
-                                        "_DependencyProvider",
-                                        trailingClosure: ClosureExpr(
-                                            leftBrace: .leftBrace
-                                                .withLeadingTrivia(.spaces(1))
-                                                .withTrailingTrivia(.spaces(1)),
-                                            signature: ClosureSignature(
-                                                input: ClosureParam(name: .identifier("container")),
-                                                inTok: .in.withLeadingTrivia(.spaces(1))
-                                            ),
-                                            statementsBuilder: {
-                                                FunctionCallExpr(
-                                                    "Test",
-                                                    leftParen: .leftParen,
-                                                    rightParen: .rightParen,
-                                                    argumentListBuilder: {
-                                                        TupleExprElement(label: .identifier("with"),
-                                                                         colon: .colon,
-                                                                         expression: IdentifierExpr("container"))
-                                                    }
-                                                )
-                                            }
-                                        )
-                                    )
-                                )
-                            ),
-                        ])
-                    )
+            for def in _definitions {
+                RawSyntax(source: """
+                private struct \(def.name)\(def.identifier.rawValue)ProviderKey: DependencyKey {
+                    static var defaultValue = _\(def.identifier.rawValue)Provider<\(def.name)>()
                 }
-            )
-            ExtensionDecl(
-                modifiers: ModifierList([TokenSyntax.public]),
-                extensionKeyword: .extension,
-                extendedType: "SharedContainer",
-                members: MemberDeclBlock {
-                    
+                \(def.isPublic ? "public" : "") extension SharedContainer {
+                    var \(def.name.lowercasedFirstLetter()): () \(def.identifier.signature) -> \(def.name) {
+                        get { { \(def.identifier.prefix) self[\(def.name)\(def.identifier.rawValue)ProviderKey.self].getValue(container: self) } }
+                        set { self[\(def.name)\(def.identifier.rawValue)ProviderKey.self].replaceProvider(newValue) }
+                    }
                 }
-            )
+                """)
+            }
         }
-        
-        VariableDecl(
-            modifiers: ModifierList([TokenSyntax.static]),
-            letOrVarKeyword: .var,
-            bindings: PatternBindingList([
-                PatternBinding(
-                    pattern: IdentifierPattern("test"),
-                    typeAnnotation: TypeAnnotation())
-            ])
-        )
 
         let syntax = source.buildSyntax(format: Format(indentWidth: 4))
 
@@ -161,11 +190,3 @@ class ExtensionBuilder {
         return content
     }
 }
-
-//
-// public extension SharedContainer {
-//    var test: () -> Test {
-//        get { { self[TestDependencyProviderKey.self].getValue(container: self) } }
-//        set { self[TestDependencyProviderKey.self].replaceProvider { _ in newValue() } }
-//    }
-// }
