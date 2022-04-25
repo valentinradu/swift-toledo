@@ -31,8 +31,12 @@ let package = Package(
         ),
         .testTarget(
             name: "InjectableTests",
-            dependencies: ["Injectable", "InjectableTool"],
+            dependencies: ["Injectable"],
             plugins: [.plugin(name: "InjectablePlugin")]
+        ),
+        .testTarget(
+            name: "InjectableToolTests",
+            dependencies: ["InjectableTool"]
         ),
         .executableTarget(
             name: "InjectableTool",
@@ -44,6 +48,6 @@ let package = Package(
         ),
         .plugin(name: "InjectablePlugin",
                 capability: .buildTool(),
-                dependencies: [.target(name: "InjectableTool")]),
+                dependencies: ["InjectableTool"]),
     ]
 )
