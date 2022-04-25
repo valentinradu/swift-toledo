@@ -16,12 +16,7 @@ let package = Package(
             targets: ["InjectablePlugin"]
         ),
     ],
-    dependencies: [
-        .package(
-            url: "https://github.com/apple/swift-syntax.git",
-            .upToNextMajor(from: "0.50600.1")
-        ),
-    ],
+    dependencies: [],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
         // Targets can depend on other targets in this package, and on products in packages this package depends on.
@@ -34,18 +29,9 @@ let package = Package(
             dependencies: ["Injectable"],
             plugins: [.plugin(name: "InjectablePlugin")]
         ),
-        .testTarget(
-            name: "InjectableToolTests",
-            dependencies: ["InjectableTool"]
-        ),
-        .executableTarget(
-            name: "InjectableTool",
-            dependencies: [
-                .product(name: "SwiftSyntax", package: "swift-syntax"),
-                .product(name: "SwiftSyntaxParser", package: "swift-syntax"),
-                .product(name: "SwiftSyntaxBuilder", package: "swift-syntax"),
-            ]
-        ),
+        .binaryTarget(name: "InjectableTool",
+                      url: "https://github.com/valentinradu/InjectableTool/releases/download/v1.0.0/InjectableTool.artifactbundle.zip",
+                      checksum: "690707e5263d7727ae61594aa3999e578852839c35757cb87d021981ba2c58a0"),
         .plugin(name: "InjectablePlugin",
                 capability: .buildTool(),
                 dependencies: ["InjectableTool"]),
