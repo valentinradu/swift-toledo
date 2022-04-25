@@ -91,7 +91,29 @@ class DefinitionsFinder: SyntaxVisitor {
             }
 
             if _lastName == nil {
-                _lastName = value
+                var localToken = token
+                var localValue = value
+
+                while let localNextToken = localToken.nextToken {
+                    let shouldExit: Bool
+                    switch localNextToken.tokenKind {
+                    case let .identifier(nextValue):
+                        localToken = localNextToken
+                        localValue = nextValue
+                        shouldExit = false
+                    case .period:
+                        localToken = localNextToken
+                        shouldExit = false
+                    default:
+                        shouldExit = true
+                    }
+
+                    if shouldExit {
+                        break
+                    }
+                }
+
+                _lastName = localValue
             }
 
             if let dependencyIdentifier = DependencyIdentifier(rawValue: value),

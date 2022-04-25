@@ -71,6 +71,18 @@ final class InjectableToolTests: XCTestCase {
             ]
         )
     }
+    
+    func testNestedDefinitionFinder() async throws {
+        let example = """
+            struct Nested.Struct: Dependency {}
+        """
+        
+        let definitionsFinder = DefinitionsFinder()
+        try definitionsFinder.parse(source: example)
+        
+        XCTAssertEqual(definitionsFinder.definitions,
+                       [DependencyDefinition(name: "Struct", identifier: .dependency, isPublic: false)])
+    }
 
     func testBasicExtensionBuilder() async throws {
         let builder = ExtensionBuilder([
