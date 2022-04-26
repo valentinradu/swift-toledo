@@ -10,4 +10,11 @@ final class InjectableTests: XCTestCase {
 
         XCTAssertEqual(b1.a.id, b2.a.id)
     }
+    
+    func testExternalEntity() async throws {
+        let container = SharedContainer()
+        // test passes if there is a musicDeviceGroupID
+        // property on the container
+        _ = container.musicDeviceGroupID()
+    }
 }
