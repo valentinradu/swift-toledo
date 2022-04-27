@@ -30,8 +30,8 @@ let package = Package(
             plugins: [.plugin(name: "InjectablePlugin")]
         ),
         .binaryTarget(name: "InjectableTool",
-                      url: "https://github.com/valentinradu/InjectableTool/releases/download/v1.0.2/InjectableTool.artifactbundle.zip",
-                      checksum: "522124180b22946e00048fb2c01c1a12161b10713f7216ffbe1a669f5c16c48f"),
+                      url: "https://github.com/valentinradu/InjectableTool/releases/download/v1.0.3/InjectableTool.artifactbundle.zip",
+                      checksum: "bdda55958f8324a174a09516215455c7813a63c7687409055639f57589bd3649"),
         .plugin(name: "InjectablePlugin",
                 capability: .buildTool(),
                 dependencies: ["InjectableTool"]),
