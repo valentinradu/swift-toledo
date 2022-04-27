@@ -31,7 +31,7 @@ let package = Package(
         ),
         .binaryTarget(name: "InjectableTool",
                       url: "https://github.com/valentinradu/InjectableTool/releases/download/v1.0.3/InjectableTool.artifactbundle.zip",
-                      checksum: "20ffffecd30e32c19f2ba7201279797080e896185e03bf689a155209d86745ac"),
+                      checksum: "1488221f750549a2bf16b2e6212159663bbb9ecc655c75c6bfdbf5c551eb7884"),
         .plugin(name: "InjectablePlugin",
                 capability: .buildTool(),
                 dependencies: ["InjectableTool"]),
