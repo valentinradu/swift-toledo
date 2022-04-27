@@ -7,6 +7,9 @@ public struct SharedContainer {
     static var all: [AnyHashable: Any] = [:]
 
     private var _values: [ObjectIdentifier: Any] = [:]
+    
+    public init() {}
+    
     public subscript<K>(_ key: K.Type) -> K.V where K: DependencyKey {
         get {
             _values[ObjectIdentifier(key)] as? K.V ?? key.defaultValue
