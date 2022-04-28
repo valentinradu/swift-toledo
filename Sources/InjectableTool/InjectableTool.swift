@@ -6,6 +6,7 @@
 //
 
 import Foundation
+
 import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxParser
@@ -153,7 +154,8 @@ class DefinitionsLookup: SyntaxVisitor {
             let shouldExit: Bool
             switch localNextToken.tokenKind {
             case let .identifier(nextValue):
-                // fixes issue with SwiftSyntax
+                // fixes this issue with SwiftSyntax
+                // https://github.com/apple/swift-syntax/issues/387
                 if nextValue == "final" {
                     shouldExit = true
                 } else {
