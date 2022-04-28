@@ -51,7 +51,7 @@ let package = Package(
             name: "InjectablePlugin",
             capability: .buildTool(),
             dependencies: [
-                .target(name: "InjectableTool", condition: .when(platforms: [.macOS])),
+                .target(name: "InjectableTool"),
             ]
         ),
     ]
