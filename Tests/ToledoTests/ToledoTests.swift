@@ -1,7 +1,7 @@
-@testable import Injectable
+@testable import Toledo
 import XCTest
 
-final class InjectableTests: XCTestCase {
+final class ToledoTests: XCTestCase {
     func testBasic() async throws {
         let container = SharedContainer()
 

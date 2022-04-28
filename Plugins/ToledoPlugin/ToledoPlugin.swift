@@ -1,21 +1,21 @@
 import Foundation
 import PackagePlugin
 
-enum InjectablePluginError: Error {
+enum ToledoPluginError: Error {
     case failedToListPackageDirectory
     case noFilesToProcess
     case wrongTargetType
 }
 
 @main
-struct InjectablePlugin: BuildToolPlugin {
+struct ToledoPlugin: BuildToolPlugin {
     func createBuildCommands(context: PluginContext,
                              target: Target) async throws -> [Command]
     {
-        let tool = try context.tool(named: "InjectableTool")
+        let tool = try context.tool(named: "ToledoTool")
 
         guard let target = target as? SwiftSourceModuleTarget else {
-            throw InjectablePluginError.wrongTargetType
+            throw ToledoPluginError.wrongTargetType
         }
 
         let commands: [Command] = target

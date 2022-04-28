@@ -4,17 +4,17 @@
 import PackageDescription
 
 let package = Package(
-    name: "Injectable",
+    name: "Toledo",
     platforms: [.macOS(.v10_15), .iOS(.v13)],
     products: [
         // Products define the executables and libraries a package produces, and make them visible to other packages.
         .library(
-            name: "Injectable",
-            targets: ["Injectable"]
+            name: "Toledo",
+            targets: ["Toledo"]
         ),
         .plugin(
-            name: "InjectablePlugin",
-            targets: ["InjectablePlugin"]
+            name: "ToledoPlugin",
+            targets: ["ToledoPlugin"]
         ),
     ],
     dependencies: [],
@@ -22,20 +22,20 @@ let package = Package(
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
         // Targets can depend on other targets in this package, and on products in packages this package depends on.
         .target(
-            name: "Injectable",
+            name: "Toledo",
             dependencies: []
         ),
         .testTarget(
-            name: "InjectableTests",
-            dependencies: ["Injectable"],
-            plugins: [.plugin(name: "InjectablePlugin")]
+            name: "ToledoTests",
+            dependencies: ["Toledo"],
+            plugins: [.plugin(name: "ToledoPlugin")]
         ),
-        .binaryTarget(name: "InjectableTool", path: "./Binaries/InjectableTool.artifactbundle.zip"),
+        .binaryTarget(name: "ToledoTool", path: "./Binaries/ToledoTool.artifactbundle.zip"),
         .plugin(
-            name: "InjectablePlugin",
+            name: "ToledoPlugin",
             capability: .buildTool(),
             dependencies: [
-                .target(name: "InjectableTool"),
+                .target(name: "ToledoTool"),
             ]
         ),
     ]

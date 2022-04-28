@@ -7,18 +7,18 @@
 
 import AudioUnit
 import Foundation
-import Injectable
+import Toledo
 
-struct A: Dependency {
+public struct A: Dependency {
     let id: UUID
-    init(with _: SharedContainer) {
+    public init(with _: SharedContainer) {
         id = UUID()
     }
 }
 
-struct B: Dependency {
+public struct B: Dependency {
     let a: A
-    init(with container: SharedContainer) {
+    public init(with container: SharedContainer) {
         a = container.a()
     }
 }
