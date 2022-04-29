@@ -6,8 +6,6 @@ public protocol DependencyKey {
 
 @MainActor
 public struct SharedContainer {
-    static var all: [AnyHashable: Any] = [:]
-
     private var _values: [ObjectIdentifier: Any] = [:]
 
     public init() {}
@@ -120,17 +118,14 @@ public class _DependencyProvider<V> where V: Dependency {
     }
 }
 
-@MainActor
 public protocol AsyncThrowingDependency {
-    init(with: SharedContainer) async throws
+    @MainActor init(with: SharedContainer) async throws
 }
 
-@MainActor
 public protocol ThrowingDependency {
-    init(with: SharedContainer) throws
+    @MainActor init(with: SharedContainer) throws
 }
 
-@MainActor
 public protocol Dependency {
-    init(with: SharedContainer)
+    @MainActor init(with: SharedContainer)
 }
