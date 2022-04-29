@@ -23,6 +23,13 @@ public struct B: Dependency {
     }
 }
 
+public struct C: AsyncThrowingDependency {
+    let a: A
+    public init(with container: SharedContainer) async throws {
+        a = container.a()
+    }
+}
+
 extension MusicDeviceGroupID: Dependency {
     public init(with _: SharedContainer) {
         self = 2
