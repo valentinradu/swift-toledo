@@ -1,12 +1,12 @@
 # Toledo
 
-təˈliːdoʊ - The former Spanish capital. A city famous for its art, metalwork and marzipan.
-
 [![Swift](https://img.shields.io/badge/Swift-5.6-orange.svg?style=for-the-badge&logo=swift)](https://swift.org)
 [![Xcode](https://img.shields.io/badge/Xcode-13-blue.svg?style=for-the-badge&logo=Xcode&logoColor=white)](https://developer.apple.com/xcode)
 [![MIT](https://img.shields.io/badge/license-MIT-black.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
- Toledo is a concurrency-ready dependency injection library for Swift that uses code generation to guarantee that all dependencies can be resolved at runtime.  
+təˈliːdoʊ - The former Spanish capital. A city famous for its art, metalwork and marzipan.
+
+Toledo is a concurrency-ready dependency injection library for Swift that uses code generation to guarantee that all dependencies can be resolved at runtime.  
 
 ## Index
 * [Features](#features)
