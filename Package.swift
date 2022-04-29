@@ -5,7 +5,10 @@ import PackageDescription
 
 let package = Package(
     name: "Toledo",
-    platforms: [.macOS(.v10_15), .iOS(.v13)],
+    platforms: [
+        .iOS(.v14), .macOS(.v11), .tvOS(.v14),
+        .macCatalyst(.v14), .watchOS(.v7), .driverKit(.v20),
+    ],
     products: [
         // Products define the executables and libraries a package produces, and make them visible to other packages.
         .library(

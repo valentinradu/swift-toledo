@@ -20,7 +20,7 @@ public struct SharedContainer {
     }
 }
 
-public class _AsyncFailableDependencyProvider<V> where V: AsyncFailableDependency {
+public class _AsyncThrowingDependencyProvider<V> where V: AsyncThrowingDependency {
     public typealias Provider = () async throws -> V
     private var _value: V?
     private var _provider: Provider?
@@ -47,7 +47,7 @@ public class _AsyncFailableDependencyProvider<V> where V: AsyncFailableDependenc
     }
 }
 
-public class _FailableDependencyProvider<V> where V: FailableDependency {
+public class _ThrowingDependencyProvider<V> where V: ThrowingDependency {
     public typealias Provider = () throws -> V
     private var _value: V?
     private var _provider: Provider?
@@ -101,11 +101,11 @@ public class _DependencyProvider<V> where V: Dependency {
     }
 }
 
-public protocol AsyncFailableDependency {
+public protocol AsyncThrowingDependency {
     init(with: SharedContainer) async throws
 }
 
-public protocol FailableDependency {
+public protocol ThrowingDependency {
     init(with: SharedContainer) throws
 }
 
