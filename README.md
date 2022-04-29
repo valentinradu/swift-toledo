@@ -6,7 +6,7 @@ təˈliːdoʊ - The former Spanish capital. A city famous for its art, metalwork
 [![Xcode](https://img.shields.io/badge/Xcode-13-blue.svg?style=for-the-badge&logo=Xcode&logoColor=white)](https://developer.apple.com/xcode)
 [![MIT](https://img.shields.io/badge/license-MIT-black.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
- Toledo is a dependency injection library for Swift that uses code generation to guarantee that all dependencies can be resolved at runtime.  
+ Toledo is a concurrency-ready dependency injection library for Swift that uses code generation to guarantee that all dependencies can be resolved at runtime.  
 
 ## Index
 * [Features](#features)
@@ -17,7 +17,8 @@ təˈliːdoʊ - The former Spanish capital. A city famous for its art, metalwork
 ## Features
 
 - once it compiles, it works
-- supports async and throwing dependencies
+- async and throwing dependencies
+- concurrency support
 - multiple containers (no singleton)
 - makes no assumption about your code
 - conformance can be provided in extensions
@@ -83,9 +84,9 @@ container.profile = { MockedProfile() }
 let mockedInstance = try await container.identityModel()
 ```
 
-### Multithreading
+### Concurrency
 
-Toledo is not thread safe and it assumes all shared instances will be fetched on the same thread. You can however easily wrap `SharedContainer` in an actor to achieve thread safety.
+Toledo uses Swift's concurrency model to guarantee that shared instances are never instantiated more than once per container.
 
 ### Limitations
 

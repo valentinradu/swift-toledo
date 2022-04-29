@@ -1,15 +1,17 @@
+@MainActor
 public protocol DependencyKey {
     associatedtype V
     static var defaultValue: V { get }
 }
 
+@MainActor
 public struct SharedContainer {
     static var all: [AnyHashable: Any] = [:]
 
     private var _values: [ObjectIdentifier: Any] = [:]
-    
+
     public init() {}
-    
+
     public subscript<K>(_ key: K.Type) -> K.V where K: DependencyKey {
         get {
             _values[ObjectIdentifier(key)] as? K.V ?? key.defaultValue
@@ -20,10 +22,12 @@ public struct SharedContainer {
     }
 }
 
+@MainActor
 public class _AsyncThrowingDependencyProvider<V> where V: AsyncThrowingDependency {
     public typealias Provider = () async throws -> V
     private var _value: V?
     private var _provider: Provider?
+    private var _task: Task<V, Error>?
 
     public init() {}
 
@@ -31,22 +35,36 @@ public class _AsyncThrowingDependencyProvider<V> where V: AsyncThrowingDependenc
         if let value = _value {
             return value
         }
+
         let value: V
-        if let provider = _provider {
-            value = try await provider()
+
+        if let task = _task {
+            value = try await task.value
+        } else if let provider = _provider {
+            let task = Task {
+                try await provider()
+            }
+            _task = task
+            value = try await task.value
         } else {
-            value = try await V(with: container)
+            let task = Task {
+                try await V(with: container)
+            }
+            _task = task
+            value = try await task.value
         }
         _value = value
         return value
     }
 
     public func replaceProvider(_ provider: @escaping Provider) {
+        _task = nil
         _value = nil
         _provider = provider
     }
 }
 
+@MainActor
 public class _ThrowingDependencyProvider<V> where V: ThrowingDependency {
     public typealias Provider = () throws -> V
     private var _value: V?
@@ -74,6 +92,7 @@ public class _ThrowingDependencyProvider<V> where V: ThrowingDependency {
     }
 }
 
+@MainActor
 public class _DependencyProvider<V> where V: Dependency {
     public typealias Provider = () -> V
     private var _value: V?
@@ -101,14 +120,17 @@ public class _DependencyProvider<V> where V: Dependency {
     }
 }
 
+@MainActor
 public protocol AsyncThrowingDependency {
     init(with: SharedContainer) async throws
 }
 
+@MainActor
 public protocol ThrowingDependency {
     init(with: SharedContainer) throws
 }
 
+@MainActor
 public protocol Dependency {
     init(with: SharedContainer)
 }

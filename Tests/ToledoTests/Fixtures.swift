@@ -30,6 +30,14 @@ public struct C: AsyncThrowingDependency {
     }
 }
 
+public struct LongLastingInit: AsyncThrowingDependency {
+    let id: UUID
+    public init(with _: SharedContainer) async throws {
+        id = UUID()
+        try await Task.sleep(nanoseconds: 1 * NSEC_PER_SEC)
+    }
+}
+
 extension MusicDeviceGroupID: Dependency {
     public init(with _: SharedContainer) {
         self = 2
