@@ -4,9 +4,7 @@
 [![Xcode](https://img.shields.io/badge/Xcode-13-blue.svg?style=for-the-badge&logo=Xcode&logoColor=white)](https://developer.apple.com/xcode)
 [![MIT](https://img.shields.io/badge/license-MIT-black.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
-təˈliːdoʊ - The former Spanish capital. A city famous for its art, metalwork and marzipan.
-
-Toledo is a concurrency-ready dependency injection library for Swift that uses code generation to guarantee dependency resolution.
+Toledo is a dependency injection library for Swift that statically generates resolvers at compile-time.
 
 ## Index
 * [Features](#features)
