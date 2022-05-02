@@ -11,6 +11,11 @@ import Toledo
 
 public struct A: Dependency {
     let id: UUID
+    
+    public init(id: UUID) {
+        self.id = id
+    }
+    
     public init(with _: SharedContainer) {
         id = UUID()
     }

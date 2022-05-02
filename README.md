@@ -31,7 +31,7 @@ dependencies: [
     .package(
         name: "Toledo",
         url: "https://github.com/valentinradu/Toledo.git",
-        from: "0.0.1"
+        from: "0.1.0"
     )
 ],
 targets: [
@@ -66,7 +66,7 @@ This means that the `IdentityModel` above will be available everywhere as `try a
 
 ### Shared instances vs new instances
 
-Calling `container.identityModel()` always returns the same instance. If you wish to create a new instance within a given container, use the `init(with:)` directly:
+Calling `container.identityModel()` always returns the same instance, even in multi-threaded contexts. If you wish to create a new instance within a given container, use the `init(with:)` directly:
 
 ```swift
 let newInstance = IdentityModel(with: container)
@@ -78,17 +78,15 @@ If you wish to provide alternative values for some of your dependencies (i.e. fo
 
 ```swift
 var container = SharedContainer()
-container.profile = { MockedProfile() }
+container.replaceProvider(ProfileDependencyProviderKey.self) { _ in
+    MockedProfile()
+}
 let mockedInstance = try await container.identityModel()
 ```
 
 ### Concurrency
 
-Toledo uses Swift's concurrency model to guarantee that shared instances are never instantiated more than once per container.
-
-### Limitations
-
-For this initial version, `init(with:)` dependency conformance has to be public. This will likely change in the future.
+Toledo uses Swift's concurrency model for `AsyncThrowingDependency` and a simple semaphore for the other dependencies to guarantee that shared instances are never instantiated more than once per container.
 
 ## License
 [MIT License](LICENSE)
