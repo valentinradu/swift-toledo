@@ -1,27 +1,39 @@
-@MainActor
+import Dispatch
 public protocol DependencyKey {
     associatedtype V
     static var defaultValue: V { get }
 }
 
-@MainActor
-public struct SharedContainer {
-    private var _values: [ObjectIdentifier: Any] = [:]
-
+public class SharedContainer {
     public init() {}
 
     public subscript<K>(_ key: K.Type) -> K.V where K: DependencyKey {
-        get {
-            _values[ObjectIdentifier(key)] as? K.V ?? key.defaultValue
-        }
-        set {
-            _values[ObjectIdentifier(key)] = newValue
-        }
+        key.defaultValue
+    }
+
+    public func replaceProvider<V>(
+        keyPath: KeyPath<SharedContainer, _DependencyProvider<V>>,
+        value: @escaping _DependencyProvider<V>.Provider
+    ) {
+        self[keyPath: keyPath].replaceProvider(value)
+    }
+
+    public func replaceProvider<V>(
+        keyPath: KeyPath<SharedContainer, _ThrowingDependencyProvider<V>>,
+        value: @escaping _ThrowingDependencyProvider<V>.Provider
+    ) {
+        self[keyPath: keyPath].replaceProvider(value)
+    }
+
+    public func replaceProvider<V>(
+        keyPath: KeyPath<SharedContainer, _AsyncThrowingDependencyProvider<V>>,
+        value: @escaping _AsyncThrowingDependencyProvider<V>.Provider
+    ) async {
+        await self[keyPath: keyPath].replaceProvider(value)
     }
 }
 
-@MainActor
-public class _AsyncThrowingDependencyProvider<V> where V: AsyncThrowingDependency {
+public actor _AsyncThrowingDependencyProvider<V> where V: AsyncThrowingDependency {
     public typealias Provider = () async throws -> V
     private var _value: V?
     private var _provider: Provider?
@@ -52,25 +64,29 @@ public class _AsyncThrowingDependencyProvider<V> where V: AsyncThrowingDependenc
             value = try await task.value
         }
         _value = value
+
         return value
     }
 
-    public func replaceProvider(_ provider: @escaping Provider) {
+    fileprivate func replaceProvider(_ provider: @escaping Provider) {
         _task = nil
         _value = nil
         _provider = provider
     }
 }
 
-@MainActor
 public class _ThrowingDependencyProvider<V> where V: ThrowingDependency {
     public typealias Provider = () throws -> V
     private var _value: V?
     private var _provider: Provider?
+    private let _sem = DispatchSemaphore(value: 1)
 
     public init() {}
 
     public func getValue(container: SharedContainer) throws -> V {
+        _sem.wait()
+        defer { _sem.signal() }
+        
         if let value = _value {
             return value
         }
@@ -84,21 +100,27 @@ public class _ThrowingDependencyProvider<V> where V: ThrowingDependency {
         return value
     }
 
-    public func replaceProvider(_ provider: @escaping Provider) {
+    fileprivate func replaceProvider(_ provider: @escaping Provider) {
+        _sem.wait()
+        defer { _sem.signal() }
+        
         _value = nil
         _provider = provider
     }
 }
 
-@MainActor
 public class _DependencyProvider<V> where V: Dependency {
     public typealias Provider = () -> V
     private var _value: V?
     private var _provider: Provider?
+    private let _sem = DispatchSemaphore(value: 1)
 
     public init() {}
 
     public func getValue(container: SharedContainer) -> V {
+        _sem.wait()
+        defer { _sem.signal() }
+        
         if let value = _value {
             return value
         }
@@ -112,20 +134,31 @@ public class _DependencyProvider<V> where V: Dependency {
         return value
     }
 
-    public func replaceProvider(_ provider: @escaping Provider) {
+    fileprivate func replaceProvider(_ provider: @escaping Provider) {
+        _sem.wait()
+        defer { _sem.signal() }
+        
         _value = nil
         _provider = provider
     }
 }
 
 public protocol AsyncThrowingDependency {
-    @MainActor init(with: SharedContainer) async throws
+    init(with: SharedContainer) async throws
 }
 
 public protocol ThrowingDependency {
-    @MainActor init(with: SharedContainer) throws
+    init(with: SharedContainer) throws
 }
 
 public protocol Dependency {
-    @MainActor init(with: SharedContainer)
+    init(with: SharedContainer)
+}
+
+public struct D: AsyncThrowingDependency {
+    public init(with _: SharedContainer) async throws {}
+}
+
+private struct DAsyncThrowingDependencyProviderKey: DependencyKey {
+    static let defaultValue = _AsyncThrowingDependencyProvider<D>()
 }

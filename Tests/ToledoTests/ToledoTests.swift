@@ -1,7 +1,6 @@
 @testable import Toledo
 import XCTest
 
-@MainActor
 final class ToledoTests: XCTestCase {
     func testBasic() async throws {
         let container = SharedContainer()
@@ -27,7 +26,7 @@ final class ToledoTests: XCTestCase {
         let result = try await withThrowingTaskGroup(of: UUID.self, returning: [UUID].self) { group in
             for _ in 0 ..< 5 {
                 group.addTask {
-                    let instance1 = try await container.longLastingInit()
+                    let instance1 = try await container.longLastingAsyncInit()
                     return instance1.id
                 }
             }
@@ -43,5 +42,35 @@ final class ToledoTests: XCTestCase {
 
         let first = result[0]
         XCTAssertTrue(result.allSatisfy { $0 == first })
+    }
+
+    func testMultithreadedAccess() async throws {
+        let container = SharedContainer()
+
+        let group = DispatchGroup()
+        let sem = DispatchSemaphore(value: 1)
+        let concurrentQueue = DispatchQueue(label: "test.queue",
+                                            attributes: .concurrent)
+
+        let uuids: Ref<[UUID]> = Ref([])
+
+        concurrentQueue.async(group: group) {
+            let uuid = container.longLastingSyncInit()
+            sem.wait()
+            defer { sem.signal() }
+            uuids.ref.append(uuid.id)
+        }
+
+        concurrentQueue.async(group: group) {
+            let uuid = container.longLastingSyncInit()
+            sem.wait()
+            defer { sem.signal() }
+            uuids.ref.append(uuid.id)
+        }
+
+        group.wait()
+
+        let first = uuids.ref[0]
+        XCTAssertTrue(uuids.ref.allSatisfy { $0 == first })
     }
 }

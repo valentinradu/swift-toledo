@@ -30,7 +30,7 @@ public struct C: AsyncThrowingDependency {
     }
 }
 
-public struct LongLastingInit: AsyncThrowingDependency {
+public struct LongLastingAsyncInit: AsyncThrowingDependency {
     let id: UUID
     public init(with container: SharedContainer) async throws {
         id = UUID()
@@ -38,8 +38,23 @@ public struct LongLastingInit: AsyncThrowingDependency {
     }
 }
 
+public struct LongLastingSyncInit: Dependency {
+    let id: UUID
+    public init(with container: SharedContainer) {
+        id = UUID()
+        Thread.sleep(forTimeInterval: 1)
+    }
+}
+
 extension MusicDeviceGroupID: Dependency {
     public init(with _: SharedContainer) {
         self = 2
+    }
+}
+
+class Ref<V> {
+    var ref: V
+    init(_ ref: V) {
+        self.ref = ref
     }
 }
