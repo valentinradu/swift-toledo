@@ -13,6 +13,17 @@ final class ToledoTests: XCTestCase {
         XCTAssertEqual(b2.a.id, c1.a.id)
     }
 
+    func testResolvedTo() async throws {
+        let container = SharedContainer()
+
+        await container.replaceProvider(CAsyncThrowingDependencyProviderKey.self) { container in
+            try await MockD(with: container)
+        }
+
+        let c = try await container.c()
+        XCTAssertEqual(ObjectIdentifier(type(of: c)), ObjectIdentifier(MockD.self))
+    }
+
     func testExternalEntity() async throws {
         let container = SharedContainer()
         // test passes if there is a musicDeviceGroupID
@@ -23,13 +34,13 @@ final class ToledoTests: XCTestCase {
     func testReplaceProvider() async throws {
         let container = SharedContainer()
         let uuid = UUID(uuidString: "93c92553-df0b-473a-80fa-5892675cd27b")!
-        
+
         container.replaceProvider(ADependencyProviderKey.self) { _ in
             A(id: uuid)
         }
-        
+
         let b = B(with: container)
-        
+
         XCTAssertEqual(b.a.id, uuid)
     }
 

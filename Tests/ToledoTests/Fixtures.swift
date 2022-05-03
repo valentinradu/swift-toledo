@@ -28,11 +28,17 @@ public struct B: Dependency {
     }
 }
 
-public struct C: AsyncThrowingDependency {
+public struct C: AsyncThrowingDependency, SomeProtocol {
+    public typealias ResolvedTo = SomeProtocol
     let a: A
     public init(with container: SharedContainer) async throws {
         a = container.a()
     }
+}
+
+public struct MockD: AsyncThrowingDependency, SomeProtocol {
+    public typealias ResolvedTo = SomeProtocol
+    public init(with container: SharedContainer) async throws {}
 }
 
 public struct LongLastingAsyncInit: AsyncThrowingDependency {
@@ -50,6 +56,8 @@ public struct LongLastingSyncInit: Dependency {
         Thread.sleep(forTimeInterval: 1)
     }
 }
+
+public protocol SomeProtocol {}
 
 extension MusicDeviceGroupID: Dependency {
     public init(with _: SharedContainer) {

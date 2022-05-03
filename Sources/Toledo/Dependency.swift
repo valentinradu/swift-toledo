@@ -42,19 +42,19 @@ public class SharedContainer {
 }
 
 public actor _AsyncThrowingDependencyProvider<V> where V: AsyncThrowingDependency {
-    public typealias Provider = (SharedContainer) async throws -> V
-    private var _value: V?
+    public typealias Provider = (SharedContainer) async throws -> V.ResolvedTo
+    private var _value: V.ResolvedTo?
     private var _provider: Provider?
-    private var _task: Task<V, Error>?
+    private var _task: Task<V.ResolvedTo, Error>?
 
     public init() {}
 
-    public func getValue(container: SharedContainer) async throws -> V {
+    public func getValue(container: SharedContainer) async throws -> V.ResolvedTo {
         if let value = _value {
             return value
         }
 
-        let value: V
+        let value: V.ResolvedTo
 
         if let task = _task {
             value = try await task.value
@@ -66,7 +66,7 @@ public actor _AsyncThrowingDependencyProvider<V> where V: AsyncThrowingDependenc
             value = try await task.value
         } else {
             let task = Task {
-                try await V(with: container)
+                try await V(with: container) as! V.ResolvedTo
             }
             _task = task
             value = try await task.value
@@ -84,25 +84,25 @@ public actor _AsyncThrowingDependencyProvider<V> where V: AsyncThrowingDependenc
 }
 
 public class _ThrowingDependencyProvider<V> where V: ThrowingDependency {
-    public typealias Provider = (SharedContainer) throws -> V
-    private var _value: V?
+    public typealias Provider = (SharedContainer) throws -> V.ResolvedTo
+    private var _value: V.ResolvedTo?
     private var _provider: Provider?
     private let _sem = DispatchSemaphore(value: 1)
 
     public init() {}
 
-    public func getValue(container: SharedContainer) throws -> V {
+    public func getValue(container: SharedContainer) throws -> V.ResolvedTo {
         _sem.wait()
         defer { _sem.signal() }
 
         if let value = _value {
             return value
         }
-        let value: V
+        let value: V.ResolvedTo
         if let provider = _provider {
             value = try provider(container)
         } else {
-            value = try V(with: container)
+            value = try V(with: container) as! V.ResolvedTo
         }
         _value = value
         return value
@@ -118,25 +118,25 @@ public class _ThrowingDependencyProvider<V> where V: ThrowingDependency {
 }
 
 public class _DependencyProvider<V> where V: Dependency {
-    public typealias Provider = (SharedContainer) -> V
-    private var _value: V?
+    public typealias Provider = (SharedContainer) -> V.ResolvedTo
+    private var _value: V.ResolvedTo?
     private var _provider: Provider?
     private let _sem = DispatchSemaphore(value: 1)
 
     public init() {}
 
-    public func getValue(container: SharedContainer) -> V {
+    public func getValue(container: SharedContainer) -> V.ResolvedTo {
         _sem.wait()
         defer { _sem.signal() }
 
         if let value = _value {
             return value
         }
-        let value: V
+        let value: V.ResolvedTo
         if let provider = _provider {
             value = provider(container)
         } else {
-            value = V(with: container)
+            value = V(with: container) as! V.ResolvedTo
         }
         _value = value
         return value
@@ -152,13 +152,16 @@ public class _DependencyProvider<V> where V: Dependency {
 }
 
 public protocol AsyncThrowingDependency {
+    associatedtype ResolvedTo = Self
     init(with: SharedContainer) async throws
 }
 
 public protocol ThrowingDependency {
+    associatedtype ResolvedTo = Self
     init(with: SharedContainer) throws
 }
 
 public protocol Dependency {
+    associatedtype ResolvedTo = Self
     init(with: SharedContainer)
 }

@@ -84,6 +84,26 @@ container.replaceProvider(ProfileDependencyProviderKey.self) { _ in
 let mockedInstance = try await container.identityModel()
 ```
 
+### Providing a resolving protocol
+
+If you need your dependency to resolve to a protocol you can use `ResolvedTo`.
+
+```swift
+extension IdentityModel: IdentityModelProtocol { ... }
+
+extension IdentityModel: AsyncThrowingDependency {
+    public typealias ResolvedTo = IdentityModelProtocol
+    public convenience init(with container: SharedContainer) async throws {
+        await self.init(profile: try await container.profile(),
+                        settings: container.settings())
+    }
+}
+```
+
+Now `try await container.identityModel()` will return `IdentityModelProtocol` instead of `IdentityModel`.
+**Important note**: Make sure the dependency implements the protocol.
+
+
 ### Concurrency
 
 Toledo uses Swift's concurrency model for `AsyncThrowingDependency` and a simple semaphore for the other dependencies to guarantee that shared instances are never instantiated more than once per container.
